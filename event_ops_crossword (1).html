@@ -1,0 +1,499 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=PT+Serif:ital,wght@0,700;1,400&display=swap');
+
+:root {
+  --ink: #121212;
+  --paper: #FFFFFF;
+  --line: #121212;
+  --rule: #D8D8D8;
+  --select-blue: #A7D8FF;
+  --select-blue-line: #1A7FD4;
+  --word-yellow: #FFE577;
+  --correct: #1A7A3C;
+  --correct-bg: #E5F5E9;
+  --incorrect: #B3261E;
+  --incorrect-bg: #FBE9E7;
+  --gray: #6E6E6E;
+  --cell-size: clamp(24px, 3.6vw, 36px);
+}
+
+* { box-sizing: border-box; }
+
+.eo-wrap {
+  font-family: 'Libre Franklin', sans-serif;
+  color: var(--ink);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 12px 32px;
+  background: var(--paper);
+}
+
+/* NYT-style masthead */
+.nyt-masthead {
+  background: var(--ink);
+  padding: 16px 20px 14px;
+  text-align: center;
+  margin-bottom: 0;
+}
+.nyt-eyebrow {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #B8B8B8;
+  margin-bottom: 6px;
+}
+.nyt-title {
+  font-family: 'PT Serif', serif;
+  font-weight: 700;
+  font-size: clamp(26px, 6vw, 38px);
+  color: var(--paper);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.nyt-sub {
+  font-family: 'PT Serif', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #C9C9C9;
+  margin-top: 6px;
+}
+.nyt-rule-gold {
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 6px, transparent 6px 8px);
+  margin-bottom: 18px;
+}
+
+.eo-panel {
+  background: var(--paper);
+  padding: 18px 4px 4px;
+  border: 1px solid var(--rule);
+  border-top: none;
+}
+
+.eo-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 14px;
+}
+.eo-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.eo-score {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+.eo-score span { color: var(--select-blue-line); font-weight: 800; }
+.eo-timer {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.eo-timer.paused { color: var(--gray); }
+.eo-timer.complete { color: var(--correct); }
+
+.eo-buttons { display: flex; gap: 8px; }
+.eo-btn {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.eo-btn:active { opacity: 0.75; }
+.eo-btn-check { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); }
+.eo-btn-check:hover { background: #2b2b2b; }
+.eo-btn-reveal { background: var(--paper); color: var(--ink); border: 1px solid var(--ink); }
+.eo-btn-reveal:hover { background: #F2F2F2; }
+
+.eo-grid-scroll {
+  overflow-x: auto;
+  padding: 4px 14px 8px;
+  margin-bottom: 22px;
+}
+.eo-grid {
+  display: grid;
+  grid-template-columns: repeat(16, var(--cell-size));
+  grid-template-rows: repeat(11, var(--cell-size));
+  gap: 1px;
+  width: max-content;
+  margin: 0 auto;
+  background: var(--line);
+  border: 2px solid var(--line);
+}
+.eo-cell {
+  position: relative;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: var(--line);
+}
+.eo-cell.blocked { visibility: hidden; background: transparent; }
+.eo-cell input {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 700;
+  font-size: calc(var(--cell-size) * 0.46);
+  text-transform: uppercase;
+  border: none;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  outline: none;
+  caret-color: transparent;
+}
+.eo-cell.active-word input:not(:focus) { background: var(--word-yellow); }
+.eo-cell input:focus { background: var(--select-blue); }
+.eo-cell.correct input { background: var(--correct-bg); color: var(--correct); }
+.eo-cell.incorrect input { background: var(--incorrect-bg); color: var(--incorrect); }
+.eo-num {
+  position: absolute;
+  top: 1px; left: 2px;
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 600;
+  font-size: calc(var(--cell-size) * 0.25);
+  color: var(--ink);
+  pointer-events: none;
+  line-height: 1;
+  z-index: 2;
+}
+
+.eo-clues {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+}
+@media (max-width: 480px) {
+  .eo-clues { grid-template-columns: 1fr; }
+}
+.eo-clue-group { padding: 16px 14px; }
+.eo-clue-group:first-child { border-right: 1px solid var(--rule); }
+@media (max-width: 480px) {
+  .eo-clue-group:first-child { border-right: none; border-bottom: 1px solid var(--rule); }
+}
+.eo-clue-group h3 {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+}
+.eo-clue-list { list-style: none; margin: 0; padding: 0; }
+.eo-clue-list li {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink);
+  padding: 7px 6px;
+  cursor: pointer;
+  margin-bottom: 1px;
+  transition: background 0.12s ease;
+}
+.eo-clue-list li:hover { background: #F4F4F4; }
+.eo-clue-list li.selected { background: var(--word-yellow); }
+.eo-clue-list b { color: var(--gray); font-weight: 700; margin-right: 5px; }
+
+</style>
+
+<div class="eo-wrap">
+  <div class="nyt-masthead">
+    <div class="nyt-eyebrow">Event Operations</div>
+    <div class="nyt-title">The Crossword</div>
+    <div class="nyt-sub">Fall 2026 Vol. 1</div>
+  </div>
+  <div class="nyt-rule-gold"></div>
+
+  <div class="eo-panel">
+    <div class="eo-status">
+      <div class="eo-score-row">
+        <div class="eo-score">Solved: <span id="eo-score-num">0</span> / 12</div>
+        <div class="eo-timer" id="eo-timer">0:00</div>
+      </div>
+      <div class="eo-buttons">
+        <button class="eo-btn eo-btn-reveal" id="eo-pause">Pause</button>
+        <button class="eo-btn eo-btn-check" id="eo-check">Check</button>
+      </div>
+    </div>
+
+    <div class="eo-grid-scroll">
+      <div class="eo-grid" id="eo-grid"></div>
+    </div>
+
+    <div class="eo-clues">
+      <div class="eo-clue-group">
+        <h3>Across</h3>
+        <ul class="eo-clue-list" id="eo-across-list"></ul>
+      </div>
+      <div class="eo-clue-group">
+        <h3>Down</h3>
+        <ul class="eo-clue-list" id="eo-down-list"></ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  const words = [
+    { id: 'MARC', num: 1, dir: 'down', answer: 'MARC',
+      clue: 'Big boss of Event Operations', cells: [[0,7],[1,7],[2,7],[3,7]] },
+    { id: 'PAULEY', num: 2, dir: 'across', answer: 'PAULEY',
+      clue: 'The biggest venue we operate', cells: [[0,10],[0,11],[0,12],[0,13],[0,14],[0,15]] },
+    { id: 'ALSCO', num: 3, dir: 'down', answer: 'ALSCO',
+      clue: 'Known for delivering our linens', cells: [[0,11],[1,11],[2,11],[3,11],[4,11]] },
+    { id: 'HORSE', num: 4, dir: 'down', answer: 'HORSE',
+      clue: 'Caty is known for being a _____ girl', cells: [[1,4],[2,4],[3,4],[4,4],[5,4]] },
+    { id: 'POLAROIDS', num: 5, dir: 'across', answer: 'POLAROIDS',
+      clue: 'These fill the walls of ESH 19', cells: [[2,3],[2,4],[2,5],[2,6],[2,7],[2,8],[2,9],[2,10],[2,11]] },
+    { id: 'GEM', num: 6, dir: 'down', answer: 'GEM',
+      clue: 'Company that provides our vehicles', cells: [[4,1],[5,1],[6,1]] },
+    { id: 'WEDNESDAY', num: 7, dir: 'across', answer: 'WEDNESDAY',
+      clue: 'Day Event Ops treats themselves', cells: [[5,0],[5,1],[5,2],[5,3],[5,4],[5,5],[5,6],[5,7],[5,8]] },
+    { id: 'DRAKE', num: 8, dir: 'down', answer: 'DRAKE',
+      clue: 'Most-streamed artist on the Event Ops Spotify this August', cells: [[5,6],[6,6],[7,6],[8,6],[9,6]] },
+    { id: 'ESH', num: 9, dir: 'down', answer: 'ESH',
+      clue: 'Building our office can be found in', cells: [[6,11],[7,11],[8,11]] },
+    { id: 'GARA', num: 10, dir: 'across', answer: 'GARA',
+      clue: 'New cafe Event Ops has fallen in love with', cells: [[7,3],[7,4],[7,5],[7,6]] },
+    { id: 'AZUL', num: 11, dir: 'down', answer: 'AZUL',
+      clue: "This vehicle hasn't started in months", cells: [[7,4],[8,4],[9,4],[10,4]] },
+    { id: 'KRUTCH', num: 12, dir: 'across', answer: 'KRUTCH',
+      clue: 'Venue we lost to gymnastics for a semester', cells: [[8,6],[8,7],[8,8],[8,9],[8,10],[8,11]] },
+  ];
+
+  const ROWS = 11, COLS = 16;
+  const cellMap = {}; // "r_c" -> { letter, number }
+
+  words.forEach(w => {
+    w.answer.split('').forEach((ch, i) => {
+      const [r, c] = w.cells[i];
+      const key = r + '_' + c;
+      if (!cellMap[key]) cellMap[key] = { letter: ch, number: null };
+    });
+    const [sr, sc] = w.cells[0];
+    const skey = sr + '_' + sc;
+    if (cellMap[skey].number === null) cellMap[skey].number = w.num;
+  });
+
+  const grid = document.getElementById('eo-grid');
+  const inputs = {}; // "r_c" -> input element
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const key = r + '_' + c;
+      const cellDiv = document.createElement('div');
+      if (!cellMap[key]) {
+        cellDiv.className = 'eo-cell blocked';
+        grid.appendChild(cellDiv);
+        continue;
+      }
+      cellDiv.className = 'eo-cell';
+      if (cellMap[key].number) {
+        const numSpan = document.createElement('span');
+        numSpan.className = 'eo-num';
+        numSpan.textContent = cellMap[key].number;
+        cellDiv.appendChild(numSpan);
+      }
+      const input = document.createElement('input');
+      input.maxLength = 1;
+      input.dataset.r = r;
+      input.dataset.c = c;
+      cellDiv.appendChild(input);
+      grid.appendChild(cellDiv);
+      inputs[key] = input;
+    }
+  }
+
+  let activeWord = null;
+
+  function wordsAt(r, c) {
+    return words.filter(w => w.cells.some(([wr, wc]) => wr === r && wc === c));
+  }
+
+  function clearHighlight() {
+    document.querySelectorAll('.eo-cell.active-word').forEach(el => el.classList.remove('active-word'));
+    document.querySelectorAll('.eo-clue-list li.selected').forEach(el => el.classList.remove('selected'));
+  }
+
+  function highlightWord(word) {
+    clearHighlight();
+    word.cells.forEach(([r, c]) => {
+      const inp = inputs[r + '_' + c];
+      if (inp) inp.parentElement.classList.add('active-word');
+    });
+    const li = document.querySelector('.eo-clue-list li[data-id="' + word.id + '"]');
+    if (li) li.classList.add('selected');
+  }
+
+  function selectWord(word, focusCell) {
+    activeWord = word;
+    highlightWord(word);
+    let target = focusCell;
+    if (!target) {
+      target = word.cells.find(([r, c]) => !inputs[r + '_' + c].value) || word.cells[0];
+    }
+    const [tr, tc] = target;
+    inputs[tr + '_' + tc].focus();
+  }
+
+  function buildClueLists() {
+    const acrossList = document.getElementById('eo-across-list');
+    const downList = document.getElementById('eo-down-list');
+    const sorted = [...words].sort((a, b) => a.num - b.num);
+    sorted.filter(w => w.dir === 'across').forEach(w => {
+      const li = document.createElement('li');
+      li.dataset.id = w.id;
+      li.innerHTML = '<b>' + w.num + '.</b> ' + w.clue + ' (' + w.answer.length + ')';
+      li.addEventListener('click', () => selectWord(w));
+      acrossList.appendChild(li);
+    });
+    sorted.filter(w => w.dir === 'down').forEach(w => {
+      const li = document.createElement('li');
+      li.dataset.id = w.id;
+      li.innerHTML = '<b>' + w.num + '.</b> ' + w.clue + ' (' + w.answer.length + ')';
+      li.addEventListener('click', () => selectWord(w));
+      downList.appendChild(li);
+    });
+  }
+  buildClueLists();
+
+  // --- Timer ---
+  let timerSeconds = 0;
+  let isPaused = false;
+  let isComplete = false;
+  const timerEl = document.getElementById('eo-timer');
+  const pauseBtn = document.getElementById('eo-pause');
+
+  function formatTime(total) {
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function updateTimerDisplay() {
+    timerEl.textContent = formatTime(timerSeconds);
+  }
+  const timerInterval = setInterval(() => {
+    if (!isPaused && !isComplete) {
+      timerSeconds++;
+      updateTimerDisplay();
+    }
+  }, 1000);
+
+  pauseBtn.addEventListener('click', () => {
+    if (isComplete) return;
+    isPaused = !isPaused;
+    pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+    timerEl.classList.toggle('paused', isPaused);
+    Object.values(inputs).forEach(inp => { inp.disabled = isPaused; });
+    if (isPaused) clearHighlight();
+  });
+
+  function evaluateGrid(markVisual) {
+    let solvedCount = 0;
+    words.forEach(w => {
+      const complete = w.cells.every(([r, c]) => inputs[r + '_' + c].value === cellMap[r + '_' + c].letter);
+      if (markVisual) {
+        w.cells.forEach(([r, c]) => {
+          const inp = inputs[r + '_' + c];
+          const parent = inp.parentElement;
+          parent.classList.remove('correct', 'incorrect');
+          if (inp.value) {
+            parent.classList.add(inp.value === cellMap[r + '_' + c].letter ? 'correct' : 'incorrect');
+          }
+        });
+      }
+      if (complete) solvedCount++;
+    });
+    document.getElementById('eo-score-num').textContent = solvedCount;
+    if (solvedCount === words.length && !isComplete) {
+      isComplete = true;
+      clearInterval(timerInterval);
+      timerEl.classList.add('complete');
+      pauseBtn.disabled = true;
+      Object.values(inputs).forEach(inp => { inp.disabled = true; });
+      // final green highlight pass
+      words.forEach(w => w.cells.forEach(([r, c]) => {
+        inputs[r + '_' + c].parentElement.classList.remove('incorrect');
+        inputs[r + '_' + c].parentElement.classList.add('correct');
+      }));
+    }
+    return solvedCount;
+  }
+  // --- End timer ---
+
+  function nextCellInWord(word, r, c) {
+    const idx = word.cells.findIndex(([wr, wc]) => wr === r && wc === c);
+    if (idx > -1 && idx < word.cells.length - 1) return word.cells[idx + 1];
+    return null;
+  }
+  function prevCellInWord(word, r, c) {
+    const idx = word.cells.findIndex(([wr, wc]) => wr === r && wc === c);
+    if (idx > 0) return word.cells[idx - 1];
+    return null;
+  }
+
+  Object.values(inputs).forEach(input => {
+    input.addEventListener('click', () => {
+      const r = +input.dataset.r, c = +input.dataset.c;
+      const candidates = wordsAt(r, c);
+      if (activeWord && candidates.includes(activeWord) && candidates.length > 1) {
+        const other = candidates.find(w => w !== activeWord);
+        selectWord(other, [r, c]);
+      } else {
+        selectWord(candidates[0], [r, c]);
+      }
+    });
+
+    input.addEventListener('input', () => {
+      input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+      input.parentElement.classList.remove('correct', 'incorrect');
+      const r = +input.dataset.r, c = +input.dataset.c;
+      if (input.value && activeWord) {
+        const nxt = nextCellInWord(activeWord, r, c);
+        if (nxt) inputs[nxt[0] + '_' + nxt[1]].focus();
+      }
+      evaluateGrid(false);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const r = +input.dataset.r, c = +input.dataset.c;
+      if (e.key === 'Backspace' && !input.value && activeWord) {
+        const prev = prevCellInWord(activeWord, r, c);
+        if (prev) {
+          e.preventDefault();
+          const prevInput = inputs[prev[0] + '_' + prev[1]];
+          prevInput.value = '';
+          prevInput.focus();
+        }
+      }
+    });
+  });
+
+  document.getElementById('eo-check').addEventListener('click', () => {
+    evaluateGrid(true);
+  });
+})();
+</script>
